@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue'
+import { reactive, computed, ref } from 'vue';
+import Card from "./Card.vue";
 
 interface DraggingState {
   draggingCard: EventTarget | null;
@@ -11,14 +12,15 @@ interface Card {
   position?: {
     x: number;
     y: number;
-  }
+  };
+  tags?: String[];
 }
 
 const cards: Card[] = reactive([
   {text: "Hello", id: '24324'},
   {text: "There",id: '243212'},
   {text: "People", id: '243434'},
-  {text: "Of", id: '2899'},
+  {text: "Of", id: '2899', tags: ["web", "vue"]},
 ]);
 const draggingState: DraggingState = reactive({draggingCard: null, activeCard: null});
 const cardContainerRef = ref(null);
@@ -41,8 +43,8 @@ const updateDraggingCard = function(draggingCard: EventTarget | null){
 }
 
 const mousedown = (ev: Event) => {
-  console.log('mousedown', ev.target);
-  const card = ev.target;
+  const target = ev.target;
+  const card = (target as HTMLDivElement).closest('.card');
   if(card && (card as HTMLDivElement).classList.contains('card')) {
     updateDraggingCard(card);
   }
@@ -60,7 +62,6 @@ const mousemove = (ev: MouseEvent) => {
   }
 }
 const mouseup = (ev: Event) => {
-  console.log('mouseup', ev);
   updateDraggingCard(null);
 }
 const mouseleave = (ev:Event) => {
@@ -68,7 +69,6 @@ const mouseleave = (ev:Event) => {
 }
 
 const resetCards = () => {
-  console.log('reset', cardContainerRef.value);
   const el = cardContainerRef.value as HTMLDivElement | null;
   if(el) {
     Array.from(el.children).forEach(card => (card as HTMLDivElement).style.transform = '');
@@ -82,13 +82,14 @@ const isDraggingCard = (card: Card) =>
 </script>
 
 <template>
-  <div class="w-screen h-screen relative bg-slate-100 flex flex-wrap"
+  <div class="w-screen h-screen relative bg-slate-100 flex flex-wrap content-start"
     ref="cardContainerRef"
     @mousedown="mousedown" @mouseup="mouseup" @mousemove="mousemove" @mouseleave="mouseleave">
-    <div v-for="card in cards"
+    <Card v-for="card in cards"
     :class="{'border-red-600 z-10 shadow-sm': isActiveCard(card), 'bg-opacity-95 shadow-lg z-30': isDraggingCard(card)}"
-     class="card select-none w-32 h-32 flex place-content-center items-center p-1 m-2 rounded border-2 bg-slate-50 shadow-sm duration-75 ease-linear transition-transform"
-     :id="card.id">{{card.text}}</div>
+     class="card select-none w-64 h-64 flex place-content-center items-center p-1 m-2 rounded border-2 bg-slate-50 shadow-sm duration-75 ease-linear transition-transform"
+     :id="card.id" :card="card"></Card>
+
 
      <div class="fixed bottom-0 w-full bg-white p-2 text-sm">
        <button class="p-2 rounded bg-slate-800 text-slate-100" @click="resetCards">Reset</button>
