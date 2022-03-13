@@ -9,7 +9,6 @@ export interface CardInterface {
 }
 const LS_CARD = "CARD_DATA";
 const data: {cards: CardInterface[], tagSelection: Set<String>} = reactive({cards: [], tagSelection: new Set()});
-const state: {activeCard: CardInterface | null} = reactive({activeCard: null });
 const tags = computed(() => {
   const tagSet: Set<String> = new Set();
   data.cards.forEach(card => card.tags && card.tags.forEach(tag => tagSet.add(tag)));
@@ -50,6 +49,15 @@ const onCardUpdate = (cardData: CardInterface) => {
   save();
 };
 
+const onCardDelete = (cardData: CardInterface) => {
+  const index = data.cards.findIndex((card) => card.id === cardData.id);
+  if (index !== -1) {
+    data.cards.splice(index, 1);
+  }
+  save();
+};
+
+
 const add = () => data.cards.push({text: "", tags: [], id: Date.now().toString() });
 
 const toggleTagSelection = (tag:String) => {
@@ -65,13 +73,14 @@ const clearTagSelection = () => data.tagSelection.clear();
 </script>
 
 <template>
-  <div class="w-screen h-screen relative bg-slate-100 flex flex-wrap content-start">
-    <Card v-for="card in filteredCards"
-    @click="state.activeCard=card"
-    :onUpdate="onCardUpdate"
-    :class="{'border-indigo-600 shadow-lg': state.activeCard === card }"
-     class="card select-none min-h-[4em] min-w-[12em] max-w-[24em] max-h-[24em]  flex place-content-center items-center p-1 m-2 rounded border-2 bg-slate-50 shadow-sm duration-75 ease-linear transition-transform"
-     :id="card.id" :card="card"></Card>
+  <div class="w-screen h-screen relative bg-slate-100">
+    <ul role="list" class="flex flex-wrap content-start" aria-label="Cards">
+      <Card v-for="card in filteredCards"
+      :onUpdate="onCardUpdate"
+      :onCardDelete="onCardDelete"
+      class="card "
+      :id="card.id" :card="card"></Card>
+     </ul>
      <div class="fixed bottom-0 w-full bg-white p-2 text-sm flex ">
        <div class="flex-grow overflow-x-auto">
          <div class="flex gap-1">
