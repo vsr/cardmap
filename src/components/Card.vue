@@ -1,26 +1,24 @@
 <script setup lang="ts">
 import { reactive, computed, ref, nextTick } from 'vue';
 
-interface Card {
+interface CardInterface {
   text: String;
   id: string;
-  position?: {
-    x: number;
-    y: number;
-  }
   tags: String[];
 }
 
 const textEl = ref(null);
+const tagsEl = ref(null);
 
 const props = defineProps({
   card: { type: Object, required: true },
+  onUpdate: {type: Function, required: true}
 });
-console.log('props', props);
 
 const state: {
     editable: boolean
-} = reactive({editable: false});
+    tagsEditing: boolean
+} = reactive({editable: false, tagsEditing: false});
 
 const edit = (editable:boolean) => {
     state.editable = editable;
@@ -31,18 +29,68 @@ const edit = (editable:boolean) => {
     }
 }
 
+const tagsEdit = (editable:boolean) => {
+    state.tagsEditing = editable;
+    if(editable) {
+        nextTick(() => {
+            if(tagsEl.value) {
+                const el = tagsEl.value as HTMLInputElement;
+                el.value = (props.card.tags || []).join(",");
+                el.focus();
+            }
+        })
+    } else {
+            if(tagsEl.value) {
+                const el = tagsEl.value as HTMLInputElement;
+                const tags = el.value.split(",");
+                props.onUpdate({...props.card, tags })
+            }
+    }
+}
+const change = () => {
+    if(textEl.value) {
+        const text = (textEl.value as HTMLDivElement).textContent
+        props.onUpdate({...props.card, text })
+    }
+}
+
+const tagTap = (function detectDoubleTapClosure() {
+  let lastTap = 0;
+  let timeout:number;
+  return function detectDoubleTap(event:TouchEvent) {
+    const curTime = new Date().getTime();
+    const tapLen = curTime - lastTap;
+    if (tapLen < 500 && tapLen > 0) {
+      tagsEdit(true)
+      event.preventDefault();
+    } else {
+      timeout = setTimeout(() => {
+        clearTimeout(timeout);
+      }, 500);
+    }
+    lastTap = curTime;
+  };
+}());
 </script>
 <template>
-<div class="relative overflow-hidden" @dblclick="edit(true)"
-        @focusout="edit(false)">
+<div class="relative overflow-hidden flex flex-col" >
 
-    <span class="text-xl min-h-[1em] min-w-[8em]" :contenteditable="state.editable"
+    <span class="text-xl w-full min-h-[2em] bg-white flex place-content-center items-center overflow-x-hidden"
+        @dblclick="edit(true)"
+        @focusout="edit(false)"
+        :contenteditable="state.editable"
+        @input="change"
         ref="textEl" >
         {{props.card.text}}
     </span>
-    <span class="absolute bottom-0 flex flex-wrap gap-1">
-        <span class="" v-if="props.card.tags" v-for="tag in props.card.tags">{{tag}}</span>
+    <span class="min-h-[1em] p-1 text-xs  flex-grow flex-row w-full  flex-wrap gap-1 "
+        @dblclick="tagsEdit(true)"
+        @touchend="tagTap"
+        >
+        <span class="px-2 py-1 bg-slate-800 text-slate-50 inline-flex rounded border shadow-sm" v-if="props.card.tags && !state.tagsEditing" v-for="tag in props.card.tags">{{tag}}</span>
+        <input @focusout="tagsEdit(false)" v-if="state.tagsEditing" class="" ref="tagsEl" name="tags" aria-label="Tags" />
     </span>
+
 </div>
 </template>
 <style scoped>
