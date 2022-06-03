@@ -48,7 +48,7 @@ const tags = computed(() => {
       data.tagColorMap[tag as string] = nextColor();
     }
   })
-  return tagsList;
+  return tagsList.sort();
 });
 
 
